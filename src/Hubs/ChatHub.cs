@@ -77,10 +77,14 @@ namespace src
         }
         public async Task SendMessage(string message)
         {
+            Thread.Sleep(1000);
             await Clients.All.SendAsync("ReceiveMessage", message);
         }
 
-
+        public async Task RetrieveLidatafromServer(string message)
+        {
+            await Clients.All.SendAsync("RetrieveData", message);
+        }
 
         public async Task UploadStreamLiDARData(ChannelReader<string> stream)
         {
@@ -101,7 +105,7 @@ namespace src
 
         public async Task SendLidarData(string lidardata)
         {
-            Thread.Sleep(1000);
+            //Thread.Sleep(1000);
             await Clients.All.SendAsync("ReceiveLidarData", lidardata);
         }
 

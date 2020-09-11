@@ -10,7 +10,10 @@ const connection = new signalR.HubConnectionBuilder()
     .withUrl("/chatHub")
     .build();
 
+//var zonelist; //global variable
+
 connection.on("ReceiveMessage", (message) => {
+    var zonelist = [];
     //const encodedMsg = message;
     //const li = document.createElement("li");
     //li.textContent = encodedMsg;
@@ -51,7 +54,26 @@ connection.on("ReceiveMessage", (message) => {
         "other": { "label_on": params.show_labels }
     });
 
+   
     // var r, g, b;
+    var zone_objects = [{
+        id: 0,
+        position: {
+            x: 0,
+            y: 0,
+            z: 0
+        },
+        velocity: {
+            x: 0,
+            y: 0,
+            z: 0
+        },
+        timestamp: header.timestamp,
+    }];
+
+    //zone_objects.push(object);
+    //zonelist.push({ zone: 'Zone', object });
+    //zone_objects.push(object);
 
     for (var i in object) {
         var objects = {}
@@ -100,6 +122,7 @@ connection.on("ReceiveMessage", (message) => {
             });
         }
 
+       zone_objects.push(object[i]);
         // CREATE DYNAMIC TABLE.
         //var newDiv = document.createElement("div");
         //newDiv.setAttribute("class", "row");
@@ -171,7 +194,8 @@ connection.on("ReceiveMessage", (message) => {
     $('#unidentifycount').empty().append("UNIDENTIFIED: " + unitentify);
     $('#ignorecount').empty().append("IGNORED: " + ignore);
 
-
+    console.log('zonelist: ', zone_objects);
+    WritetoJSNlog(zone_objects);
 });
 
 //document.getElementById("sendButton").addEventListener("click", event => {
@@ -180,6 +204,7 @@ connection.on("ReceiveMessage", (message) => {
 //    connection.invoke("SendMessage", user, message).catch(err => console.error(err));
 //    event.preventDefault();
 //});
+
 
 connection.on("UploadStream", (stream) => {
     const encodedMsg = stream;
@@ -233,35 +258,41 @@ function GetPointstoCalculateDistance(point, object_id) {
 
 function GetDistance(point_A, point_B) {
     var distance;
-    //console.log("point_A: ", point_A[0]);
-    //console.log("point_A: ", point_A[1]);
-    //console.log("point_A: ", point_A[2]);
-    //console.log("point_B: ", point_B[0]);
-    //console.log("point_B: ", point_B[1]);
-    //console.log("point_B: ", point_B[2]);
+    if (Array.isArray(point_A) && Array.isArray(point_B)) {
+        deltaX = point_B[0] - point_A[0];
+        deltaY = point_B[1] - point_A[1];
+        deltaZ = point_B[2] - point_A[2];
+    }
+    else {
+        deltaX = point_B.x - point_A.x;
+        deltaY = point_B.y - point_A.y;
+        deltaZ = point_B.z - point_A.z;
+    }
 
-    deltaX = point_B[0] - point_A[0];
-    deltaY = point_B[1] - point_A[1];
-    deltaZ = point_B[2] - point_A[2];
 
     distance = Math.round((Math.sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ)) * 100) / 100;
-
-
-    //distance = Math.sqrt(Math.pow(2, (point_B[0] - point_A[0])) + Math.pow(2, (point_B[1] - point_A[1])) + Math.pow(2, (point_B[3] - point_A[3])));
     return distance;
 }
 
 function GetSpeed(velocity) {
-    // var velocity = [-0.0066304221, 1.3691117, 0];
     var speed;
 
-    deltaX = velocity[0] * velocity[0];
-    deltaY = velocity[1] * velocity[1];
-    deltaZ = velocity[2] * velocity[2];
+    if (Array.isArray(velocity)) {
+        deltaX = velocity[0] * velocity[0];
+        deltaY = velocity[1] * velocity[1];
+        deltaZ = velocity[2] * velocity[2];
+    }
+    else {
+        deltaX = velocity.x * velocity.x;
+        deltaY = velocity.y * velocity.y;
+        deltaZ = velocity.z * velocity.z;
+    }
+
 
     speed = Math.round((Math.sqrt(deltaX + deltaY + deltaZ)) * 100) / 100;
     return speed;
 }
+
 
 function getRandomColor() {
     var letters = '0123456789ABCDEF';
@@ -603,6 +634,40 @@ function my_three_d_test_Fun() {
     three_d.make_scatter(params);
 }
 
+//function WritetoJSNlog(zone_objects) {
+//    if (zone_objects.length > 0) {
+//        for (var i in zone_objects) {
+//            for (var j = 0; j < zonelist[i].object.length - 1; j++) {
+//                var average_speed = GetSpeed(zone_objects[i].object[j].velocity);
+//                var objectsdistance = GetDistance(zonelist[i].object[j].position, zonelist[i].object[j + 1].position);
+
+//                var unix_timestamp = zonelist[i].object[j].timestamp;
+//                var date = timeConverter(unix_timestamp);
+
+//                JL().info('Timestamp: ' + date.toLocaleString() + ' Tracking Id: ' + zonelist[i].object[j].id + ', Average Speed=' + average_speed + ' m/s, Distance between ' + zonelist[i].object[j].id + ' and '
+//                    + zonelist[i].object[j + 1].id + ' is ' + objectsdistance + 'm');
+//            }
+//        }
+//    }
+//}
+function WritetoJSNlog(zone_objects) {
+    if (zone_objects.length > 0) {
+        for (var i = 0; i < zone_objects.length - 1; i++) {
+           // for (var j = 0; j < zone_objects[i].length - 1; j++) {
+                var average_speed = GetSpeed(zone_objects[i].velocity);
+                var objectsdistance = GetDistance(zone_objects[i].position, zone_objects[i + 1].position);
+
+                var unix_timestamp = zone_objects[i].timestamp;
+                var date = timeConverter(unix_timestamp);
+
+                JL().info('Timestamp: ' + date.toLocaleString() + ',' + ' Tracking Id: ' + zone_objects[i].id + ', Average Speed=' + average_speed + ' m/s, Distance between ' + zone_objects[i].id + ' and '
+                    + zone_objects[i + 1].id + ' is ' + objectsdistance + 'm');
+           // }
+        }
+    }
+}
+
+
 $("#calculate").click(function () {
 
     var pointA_value = document.getElementById("point_a").value;
@@ -629,6 +694,8 @@ $("#clear").click(function () {
     $('#point_b').empty().val("");
     $('#distance').empty().val("");
 })
+
+
 
 $(document).ready(function () {
 

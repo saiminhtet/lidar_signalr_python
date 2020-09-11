@@ -22,13 +22,15 @@ connection.onclose(async () => {
 start();
 
 
-var zonelist = []; //global variable
 let chart; // global
+let chartnozone;
 let chartzone1;
 let chartzone2;
 
 
 connection.on("ReceiveLidarData", (lidardata) => {
+
+    var zonelist = []; //global variable
 
     const lidar_data = JSON.parse(lidardata);
     //const lidar_data = lidardata;
@@ -44,80 +46,79 @@ connection.on("ReceiveLidarData", (lidardata) => {
     console.log('object', object);
 
     var divContainer = document.getElementById("showData");
-    //divContainer.innerHTML = "";
+    divContainer.innerHTML = "";
+
+    if (zone.length > 0) {
+        for (var z in zone) {
+
+            var div_id = zone[z].name.replace(/\s+/g, '');
+
+            var data_objs = [{ x: 0, y: 0, label: "Sensor" }];
+            var labels_obj = [];
 
 
+            var objects = [{
+                id: 0,
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                velocity: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                timestamp: zone[z].timestamp,
+            }];
 
-    for (var z in zone) {
+            zonelist.push({ zone: zone[z].name.replace(/\s+/g, '').toLowerCase(), objects });
+            for (var id in zone[z].objectIds) {
 
-        var div_id = zone[z].name.replace(/\s+/g, '');
+                for (var i in object) {
 
-        var data_objs = [{ x: 0, y: 0, label: "Sensor" }];
-        var labels_obj = [];
+                    if (object[i].id == zone[z].objectIds[id]) {
+                        data_objs.push({ x: GetPoint(object[i].position.x), y: GetPoint(object[i].position.y), label: "Id:" + object[i].id, distance: 1 })
+                        objects.push(object[i]);
+                    }
 
 
-        var objects = [{
-            id: 0,
-            position: {
-                x: 0,
-                y: 0,
-                z: 0
-            },
-            velocity: {
-                x: 0,
-                y: 0,
-                z: 0
-            },
-            timestamp: zone[z].timestamp,
-        }];
-
-        zonelist.push({ zone: zone[z].name.replace(/\s+/g, '').toLowerCase(), objects });
-        for (var id in zone[z].objectIds) {
-
-            for (var i in object) {
-
-                if (object[i].id == zone[z].objectIds[id]) {
-                    data_objs.push({ x: GetPoint(object[i].position.x), y: GetPoint(object[i].position.y), label: "Id:" + object[i].id, distance: 1 })
-                    objects.push(object[i]);
                 }
+            }
 
+            for (var i = 0; i < objects.length - 1; i++) {
+
+                var i_id = objects[i].id;
+                var j_id = objects[i + 1].id;
+
+                var x1 = objects[i].position.x;
+                var y1 = objects[i].position.y;
+                var z1 = objects[i].position.z;
+                var xyz1 = [x1, y1, z1];
+
+                var x2 = objects[i + 1].position.x;
+                var y2 = objects[i + 1].position.y;
+                var z2 = objects[i + 1].position.z;
+                var xyz2 = [x2, y2, z2];
+
+                var distance = GetDistance(xyz1, xyz2);
+
+                labels_obj.push({
+                    point: {
+                        xAxis: 0, yAxis: 0, x: ((GetPoint(objects[i + 1].position.x)) + (GetPoint(objects[i].position.x))) / 2,
+                        y: ((GetPoint(objects[i + 1].position.y)) + (GetPoint(objects[i].position.y))) / 2
+                    }
+                    , text: 'Distance between Id: ' + objects[i].id + ' and ' + objects[i + 1].id + '= ' + distance + 'm'
+                })
 
             }
-        }
-
-        for (var i = 0; i < objects.length - 1; i++) {
-
-            var i_id = objects[i].id;
-            var j_id = objects[i + 1].id;
-
-            var x1 = objects[i].position.x;
-            var y1 = objects[i].position.y;
-            var z1 = objects[i].position.z;
-            var xyz1 = [x1, y1, z1];
-
-            var x2 = objects[i + 1].position.x;
-            var y2 = objects[i + 1].position.y;
-            var z2 = objects[i + 1].position.z;
-            var xyz2 = [x2, y2, z2];
-
-            var distance = GetDistance(xyz1, xyz2);
-
-            labels_obj.push({
-                point: {
-                    xAxis: 0, yAxis: 0, x: ((GetPoint(objects[i + 1].position.x)) + (GetPoint(objects[i].position.x))) / 2,
-                    y: ((GetPoint(objects[i + 1].position.y)) + (GetPoint(objects[i].position.y))) / 2
-                }
-                , text: 'Distance between Id: ' + objects[i].id + ' and ' + objects[i + 1].id + '= ' + distance + 'm'
-            })
-
-        }
-        console.log("Data: ", data_objs);
-        console.log("labels_obj: ", labels_obj);
+            console.log("Data: ", data_objs);
+            console.log("labels_obj: ", labels_obj);
 
 
 
-        var check_div = '#' + div_id;
-        //if ($(check_div).length <= 0) {
+            var check_div = '#' + div_id;
+            //if ($(check_div).length <= 0) {
             var newDiv = document.createElement("div");
 
             console.log(div_id);
@@ -214,7 +215,7 @@ connection.on("ReceiveLidarData", (lidardata) => {
                     }
 
                 });
-            //----End High Chart
+                //----End High Chart
             }
             else {
                 //----Start High Chart
@@ -305,25 +306,193 @@ connection.on("ReceiveLidarData", (lidardata) => {
                     }
 
                 });
-            //----End High Chart
+                //----End High Chart
             }
 
-        //} else {
+            //} else {
 
-        //    const point = [{
-        //        name: zone[z].name,
-        //        data: data_objs
-        //    }]
-        //    if (z == 0) {
-        //        chartzone1.series[0].addPoint(point, true);
-        //        //chartzone1.tooltip
-        //    }
-        //    else {
-        //        chartzone2.series[0].addPoint(point, true);
-        //    }
+            //    const point = [{
+            //        name: zone[z].name,
+            //        data: data_objs
+            //    }]
+            //    if (z == 0) {
+            //        chartzone1.series[0].addPoint(point, true);
+            //        //chartzone1.tooltip
+            //    }
+            //    else {
+            //        chartzone2.series[0].addPoint(point, true);
+            //    }
 
-        //}
+            //}
+        }
     }
+    else {//----Start High Chart
+        var div_id = "allzone";
+
+        var data_objs = [{ x: 0, y: 0, label: "Sensor" }];
+        var labels_obj = [];
+
+
+        var objects = [{
+            id: 0,
+            position: {
+                x: 0,
+                y: 0,
+                z: 0
+            },
+            velocity: {
+                x: 0,
+                y: 0,
+                z: 0
+            },
+            timestamp: header.timestamp,
+        }];
+
+        zonelist.push({ zone: div_id, objects });
+        //for (var id in zone[z].objectIds) {
+
+        for (var i in object) {
+
+           // if (object[i].id == zone.objectIds[id]) {
+                data_objs.push({ x: GetPoint(object[i].position.x), y: GetPoint(object[i].position.y), label: "Id:" + object[i].id, distance: 1 })
+                objects.push(object[i]);
+            //}
+
+
+        }
+        //}
+
+        for (var i = 0; i < objects.length - 1; i++) {
+
+            var i_id = objects[i].id;
+            var j_id = objects[i + 1].id;
+
+            var x1 = objects[i].position.x;
+            var y1 = objects[i].position.y;
+            var z1 = objects[i].position.z;
+            var xyz1 = [x1, y1, z1];
+
+            var x2 = objects[i + 1].position.x;
+            var y2 = objects[i + 1].position.y;
+            var z2 = objects[i + 1].position.z;
+            var xyz2 = [x2, y2, z2];
+
+            var distance = GetDistance(xyz1, xyz2);
+
+            labels_obj.push({
+                point: {
+                    xAxis: 0, yAxis: 0, x: ((GetPoint(objects[i + 1].position.x)) + (GetPoint(objects[i].position.x))) / 2,
+                    y: ((GetPoint(objects[i + 1].position.y)) + (GetPoint(objects[i].position.y))) / 2
+                }
+                , text: 'Distance between Id: ' + objects[i].id + ' and ' + objects[i + 1].id + '= ' + distance + 'm'
+            })
+
+        }
+        console.log("Data: ", data_objs);
+        console.log("labels_obj: ", labels_obj);
+
+
+
+        var check_div = '#' + div_id;
+        //if ($(check_div).length <= 0) {
+        var newDiv = document.createElement("div");
+
+        console.log(div_id);
+        newDiv.setAttribute("id", div_id);
+        divContainer.appendChild(newDiv);
+
+        chartnozone = new Highcharts.chart(div_id, {
+
+            title: {
+                text: 'All Zone'
+            },
+
+            yAxis: {
+                title: {
+                    text: 'Y'
+                },
+                tickInterval: 0.5,
+                gridLineWidth: 1
+            },
+
+            xAxis: {
+                title: {
+                    text: 'X'
+                },
+                tickInterval: 0.5,
+                gridLineWidth: 1
+            },
+
+            legend: {
+                layout: 'vertical',
+                align: 'right',
+                verticalAlign: 'middle'
+            },
+
+            plotOptions: {
+                line: {
+                    dataLabels: {
+                        enabled: true,
+                        formatter: function () {
+                            return this.point.label;
+                        }
+                    },
+                    enableMouseTracking: true
+                },
+            },
+
+            series: [{
+                name: 'Objects',
+                data: data_objs
+            }],
+
+            tooltip: {
+                formatter: function () {
+                    var current_index = this.point.index;
+
+                    console.log('zonelist: ', zonelist);
+                    for (var i in zonelist) {
+                        // if (zonelist[i].zone == (this.series.name).replace(/\s+/g, '').toLowerCase()) {
+
+                        var average_speed = GetSpeed(zonelist[i].objects[current_index].velocity);
+
+                        var additionalString = '<br>Speed: ' + average_speed + ' m/s <br>Distance:<br>';
+                        for (var o in zonelist[i].objects) {
+                            if (o != current_index) {
+
+                                var objectsdistance = GetDistance(zonelist[i].objects[current_index].position, zonelist[i].objects[o].position);
+
+                                additionalString = additionalString + 'Id: ' + zonelist[i].objects[current_index].id + ' to Id:' + zonelist[i].objects[o].id + '= ' + objectsdistance + 'm <br>';
+                            }
+                        }
+                        // }
+                    }
+
+                    return additionalString
+                }
+
+            },
+            responsive: {
+                rules: [{
+                    condition: {
+                        maxWidth: 500
+                    },
+                    chartOptions: {
+                        legend: {
+                            layout: 'horizontal',
+                            align: 'center',
+                            verticalAlign: 'bottom'
+                        }
+                    }
+                }]
+            }
+
+        });
+        //----End High Chart
+
+
+    }
+    WritetoJSNlog(zonelist);
 });
 
 
@@ -806,7 +975,21 @@ function GetPoint(num) {
     return point;
 }
 
-function WritetoJSNlog() {
+
+//var appender = JL.createAjaxAppender("appender");
+//appender.setOptions({
+//    "bufferSize": 200,
+//    "storeInBufferLevel": 1000,
+//    "level": 4000,
+//    "sendWithBufferLevel": 6000
+//});
+
+//JL().setOptions({
+//    "appenders": [appender]
+//});
+
+function WritetoJSNlog(zonelist) {
+
     if (zonelist.length > 0) {
         for (var i in zonelist) {
             for (var j = 0; j < zonelist[i].objects.length - 1; j++) {
@@ -816,7 +999,7 @@ function WritetoJSNlog() {
                 var unix_timestamp = zonelist[i].objects[j].timestamp;
                 var date = timeConverter(unix_timestamp);
 
-                JL().info('Timestamp: ' + date.toLocaleString() + ' Tracking Id: ' + zonelist[i].objects[j].id + ', Average Speed=' + average_speed + ' m/s, Distance between ' + zonelist[i].objects[j].id + ' and '
+                JL().info('Timestamp: ' + date.toLocaleString() + ',' + ' Tracking Id: ' + zonelist[i].objects[j].id + ', Average Speed=' + average_speed + ' m/s, Distance between ' + zonelist[i].objects[j].id + ' and '
                     + zonelist[i].objects[j + 1].id + ' is ' + objectsdistance + 'm');
             }
         }
@@ -843,10 +1026,72 @@ function timeConverter(UNIX_timestamp) {
 }
 
 
+$("#RefreshButton").on("click", function () {
+    var message = 'getdata';
+    connection.invoke("RetrieveLidatafromServer", message).catch(err => console.error(err));
+    //WritetoJSNlog();
+});
+
+
+var interval_polling = null;
+function PollingLidarData(interval) {
+    console.log(' PollingLidarData working!');
+    interval_polling = setInterval(function () {
+        var message = 'getdata';
+        connection.invoke("RetrieveLidatafromServer", message).catch(err => console.error(err));
+    }, interval * 1000);
+}
+
+function StopPollingLidarData() {
+    clearInterval(interval_polling);
+}
+
+$("#interval").bind('keyup mouseup', function () {
+    if ($("#pollingchkbox").is(':checked')) {
+        if ($("#StartButton").text() === 'Stop Polling Data') {
+            StopPollingLidarData();
+            //pulling first data
+            var message = 'getdata';
+            connection.invoke("RetrieveLidatafromServer", message).catch(err => console.error(err));
+
+            //set interval
+            var interval_sec = document.getElementById("interval").value;
+            PollingLidarData(interval_sec);
+        }
+    } else {
+        StopPollingLidarData();
+    }
+});
+
+$("#StartButton").on("click", function () {
+    if ($("#pollingchkbox").is(':checked')) {
+        if ($("#StartButton").text() === 'Start Polling Data') {
+            $("#StartButton").text("Stop Polling Data").attr("class", "btn-danger");
+
+            //pulling first data
+            var message = 'getdata';
+            connection.invoke("RetrieveLidatafromServer", message).catch(err => console.error(err));
+
+            //set interval
+            var interval_sec = document.getElementById("interval").value;
+            PollingLidarData(interval_sec);
+
+        } else {
+            $("#StartButton").text("Start Polling Data").attr("class", "btn-success");
+            StopPollingLidarData();
+        }
+
+    } else {
+        alert("Please check the Enable Polling Live Data!.")
+        $("#StartButton").text("Start Polling Data").attr("class", "btn-success");
+    }
+});
+
+
 
 $(document).ready(function () {
     //my_chartjs_test_Fun();
-    WritetoJSNlog();
+    // WritetoJSNlog();
 });
 
 /**
@@ -986,7 +1231,6 @@ async function requestData() {
 //});
 
 function requestLidarData() {
-
     //setTimeout(requestLidarData, 1000);
 };
 

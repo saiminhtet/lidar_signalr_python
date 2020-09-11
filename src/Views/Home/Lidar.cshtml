@@ -4,9 +4,37 @@
 
 @*<div id="container" style="width:100%; height:400px;"></div>*@
 @*<div id="container1" style="width:100%; height:400px;"></div>*@
+<div class="text-center">
+    <div class="row">       
+        <div class="col-10">
+            <div class="container">
+                <div class="row">
+                    <div class="col-sm">
+                        <input type="checkbox" class="form-check-input" id="pollingchkbox">
+                        <label class="form-check-label" for="pollingchkbox">Enable Polling Live Data</label>
+                    </div>
+                    <div class="col-sm">
+                        <label for="example-number-input" class="col-form-label">Polling Time Interval (Seconds):</label>
+                        <input id="interval" style="width:40px;" placeholder="1" value="1" type="number" min="1" max="10" />
+                    </div>
+                    <div class="col-sm">
+                        <button id="StartButton" class="btn-success">Start Polling Data</button>
+                        <button id="RefreshButton" class="btn-primary">Refresh Data</button>
+                    </div>
+                </div>
+            </div>        
+        </div>       
+    </div>
+    @*<div class="row">
+        <div class="col-2">
+            <button id="RefreshButton" class="btn-primary">Refresh Data</button>
+        </div>
+    </div>*@
+</div>
+
 <div id="showData" style="width:75%">
     @*<div id="Zone0"></div>
-    <div id="Zone1"></div>*@
+        <div id="Zone1"></div>*@
 </div>
 
 
