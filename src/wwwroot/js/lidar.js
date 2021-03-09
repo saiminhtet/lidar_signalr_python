@@ -1,5 +1,5 @@
 ﻿const connection = new signalR.HubConnectionBuilder()
-    .withUrl("/chatHub")
+    .withUrl("/lidarHub")
     .configureLogging(signalR.LogLevel.Information)
     .build();
 
@@ -45,6 +45,17 @@ connection.on("ReceiveLidarData", (lidardata) => {
     console.log('zone', zone);
     console.log('object', object);
 
+    let unix_timestamp = header.timestamp;
+
+    var date = timeConverter(unix_timestamp);
+
+    $('#timestamp').empty().append("DateTime: " + date.toLocaleString());
+    $('#objectcounts').empty().append("Total Objects: " + object.length);
+
+    let human = 0;
+    let ignore = 0;
+    let unitentify = 0;
+
     var divContainer = document.getElementById("showData");
     divContainer.innerHTML = "";
 
@@ -76,8 +87,22 @@ connection.on("ReceiveLidarData", (lidardata) => {
             for (var id in zone[z].objectIds) {
 
                 for (var i in object) {
-
                     if (object[i].id == zone[z].objectIds[id]) {
+
+                        const expr = object[i].objectClass.toUpperCase();
+                        switch (expr) {
+                            case 'HUMAN':
+                                human += 1;
+                                break;
+                            case 'IGNORED':
+                                human += 1;
+                            case 'UNIDENTIFIED':
+                                human += 1;
+                                break;
+                            default:
+
+                        }
+
                         data_objs.push({ x: GetPoint(object[i].position.x), y: GetPoint(object[i].position.y), label: "Id:" + object[i].id, distance: 1 })
                         objects.push(object[i]);
                     }
@@ -353,9 +378,22 @@ connection.on("ReceiveLidarData", (lidardata) => {
 
         for (var i in object) {
 
-           // if (object[i].id == zone.objectIds[id]) {
-                data_objs.push({ x: GetPoint(object[i].position.x), y: GetPoint(object[i].position.y), label: "Id:" + object[i].id, distance: 1 })
-                objects.push(object[i]);
+            const expr = object[i].objectClass.toUpperCase();
+            switch (expr) {
+                case 'HUMAN':
+                    human += 1;
+                    break;
+                case 'IGNORED':
+                    human += 1;
+                case 'UNIDENTIFIED':
+                    human += 1;
+                    break;
+                default:
+
+            }
+            // if (object[i].id == zone.objectIds[id]) {
+            data_objs.push({ x: GetPoint(object[i].position.x), y: GetPoint(object[i].position.y), label: "Id:" + object[i].id, distance: 1 })
+            objects.push(object[i]);
             //}
 
 
@@ -492,6 +530,10 @@ connection.on("ReceiveLidarData", (lidardata) => {
 
 
     }
+    $('#humancount').empty().append("HUMAN: " + human);
+    $('#unidentifycount').empty().append("UNIDENTIFIED: " + unitentify);
+    $('#ignorecount').empty().append("IGNORED: " + ignore);
+
     WritetoJSNlog(zonelist);
 });
 
@@ -574,7 +616,9 @@ function my_chartjs_test_Fun() {
                 "objectIds": [
                     10,
                     22,
-                    27
+                    27,
+                    111,
+                    222
                 ],
                 "zMin": 0,
                 "zMax": 1.7976931348623157e+308,
@@ -586,8 +630,8 @@ function my_chartjs_test_Fun() {
                 "id": "10",
                 "timestamp": "1597431738805",
                 "position": {
-                    "x": 3.6440935,
-                    "y": -0.96020705,
+                    "x": 2.0265133,
+                    "y": 10.888519,
                     "z": -1.1999428
                 },
                 "size": {
@@ -606,8 +650,8 @@ function my_chartjs_test_Fun() {
                 "id": "22",
                 "timestamp": "1597431738805",
                 "position": {
-                    "x": 1.30845419,
-                    "y": -6.1479537,
+                    "x": 1.3665228,
+                    "y": 3.0100648,
                     "z": -6.92307472
                 },
                 "size": {
@@ -626,8 +670,8 @@ function my_chartjs_test_Fun() {
                 "id": "27",
                 "timestamp": "1597431738805",
                 "position": {
-                    "x": -8.020113,
-                    "y": -30.678568,
+                    "x": 16.190891,
+                    "y": 1.7423855,
                     "z": 0
                 },
                 "size": {
@@ -646,8 +690,8 @@ function my_chartjs_test_Fun() {
                 "id": "111",
                 "timestamp": "1597431738805",
                 "position": {
-                    "x": 1.6440935,
-                    "y": 4.96020705,
+                    "x": 17.175663,
+                    "y": 9.6511,
                     "z": -1.1999428
                 },
                 "size": {
@@ -666,8 +710,8 @@ function my_chartjs_test_Fun() {
                 "id": "222",
                 "timestamp": "1597431738805",
                 "position": {
-                    "x": 3.6440935,
-                    "y": -4.96020705,
+                    "x": 8.787050619999999,
+                    "y": 6.98863386,
                     "z": -1.1999428
                 },
                 "size": {
@@ -713,6 +757,7 @@ function my_chartjs_test_Fun() {
     divContainer.innerHTML = "";
 
 
+    zonelist = [];
 
     for (var z in zone) {
         var newDiv = document.createElement("div");
@@ -975,19 +1020,6 @@ function GetPoint(num) {
     return point;
 }
 
-
-//var appender = JL.createAjaxAppender("appender");
-//appender.setOptions({
-//    "bufferSize": 200,
-//    "storeInBufferLevel": 1000,
-//    "level": 4000,
-//    "sendWithBufferLevel": 6000
-//});
-
-//JL().setOptions({
-//    "appenders": [appender]
-//});
-
 function WritetoJSNlog(zonelist) {
 
     if (zonelist.length > 0) {
@@ -999,8 +1031,19 @@ function WritetoJSNlog(zonelist) {
                 var unix_timestamp = zonelist[i].objects[j].timestamp;
                 var date = timeConverter(unix_timestamp);
 
-                JL().info('Timestamp: ' + date.toLocaleString() + ',' + ' Tracking Id: ' + zonelist[i].objects[j].id + ', Average Speed=' + average_speed + ' m/s, Distance between ' + zonelist[i].objects[j].id + ' and '
-                    + zonelist[i].objects[j + 1].id + ' is ' + objectsdistance + 'm');
+                JL().info('Timestamp:,' + date.toLocaleString() + ',TrackingId:,' + zonelist[i].objects[j].id + ',Average Speed:,' + average_speed + ',m/s, Distance between, Point-A(TrackingId),' + zonelist[i].objects[j].id + ',and,Point-B(TrackingId),'
+                    + zonelist[i].objects[j + 1].id + ' ,=, ' + objectsdistance + ',m,');
+
+
+                //const li = document.createElement("li");
+                //li.textContent = 'Timestamp: ' + date.toLocaleString() + ', ' + ' Tracking Id: ' + zonelist[i].objects[j].id + ', Average Speed = ' + average_speed + ' m / s, Distance between ' + zonelist[i].objects[j].id + ' and '
+                //    + zonelist[i].objects[j + 1].id + ' is ' + objectsdistance + 'm';
+                //var logcount = document.getElementById("loglist").getElementsByTagName("li").length;
+                //console.log('logcount:',logcount);
+                //if (logcount > 50) {
+                //   document.getElementById("loglist").innerHTML = "";
+                //}
+                //document.getElementById("loglist").appendChild(li);
             }
         }
     }
@@ -1063,6 +1106,13 @@ $("#interval").bind('keyup mouseup', function () {
     }
 });
 
+$("#pollingchkbox").on("click", function () {
+    if ($("#pollingchkbox").not(':checked')) {
+        $("#StartButton").text("Start Polling Data").attr("class", "btn-success");
+        StopPollingLidarData();
+    }
+});
+
 $("#StartButton").on("click", function () {
     if ($("#pollingchkbox").is(':checked')) {
         if ($("#StartButton").text() === 'Start Polling Data') {
@@ -1090,330 +1140,9 @@ $("#StartButton").on("click", function () {
 
 
 $(document).ready(function () {
-    //my_chartjs_test_Fun();
+     my_chartjs_test_Fun();
     // WritetoJSNlog();
 });
 
-/**
-* Request data from the server, add it to the graph and set a timeout to request again
-*/
-async function requestData() {
-    const result = await fetch('https://demo-live-data.highcharts.com/time-rows.json');
-    if (result.ok) {
-        const data = await result.json();
-        const [date, value] = data[0];
-        const point = [new Date(date).getTime(), value * 10];
-        const series = chartzone1.series[0],
-            shift = series.data.length > 20; // shift if the series is longer than 20
-        // add the point
-        chartzone1.series[0].addPoint(point, true, shift);
-        const series1 = chartzone1.series[0],
-            shift1 = series1.data.length > 20; // shift if the series is longer than 20
-        // add the point
-        chartzone2.series[0].addPoint(point, true, shift1);
-        // call it again after one second
-        setTimeout(requestData, 1000);
-    }
-}
 
 
-//connection.on("ReceiveLidarData", (lidardata) => {
-
-//    const lidar_data = JSON.parse(lidardata);
-//    //const lidar_data = lidardata;
-//    console.log(typeof (lidar_data));
-//    console.log('lidar_data', lidar_data);
-
-
-//    var header = lidar_data.header;
-//    var zone = lidar_data.zones
-//    var object = lidar_data.object;
-
-//    console.log('zone', zone);
-//    console.log('object', object);
-
-
-
-//    for (var z in zone) {
-
-//        var div_id = zone[z].name.replace(/\s+/g, '');
-
-//        var data_objs = [{ x: 0, y: 0, label: "Sensor" }];
-//        var labels_obj = [];
-
-
-//        var objects = [{
-//            id: 0,
-//            position: {
-//                x: 0,
-//                y: 0,
-//                z: 0
-//            },
-//            velocity: {
-//                x: 0,
-//                y: 0,
-//                z: 0
-//            },
-//            timestamp: zone[z].timestamp,
-//        }];
-
-//        zonelist.push({ zone: zone[z].name.replace(/\s+/g, '').toLowerCase(), objects });
-//        for (var id in zone[z].objectIds) {
-
-//            for (var i in object) {
-
-//                if (object[i].id == zone[z].objectIds[id]) {
-//                    data_objs.push({ x: GetPoint(object[i].position.x), y: GetPoint(object[i].position.y), label: "Id:" + object[i].id, distance: 1 })
-//                    objects.push(object[i]);
-//                }
-
-
-//            }
-//        }
-
-//        for (var i = 0; i < objects.length - 1; i++) {
-
-//            var i_id = objects[i].id;
-//            var j_id = objects[i + 1].id;
-
-//            var x1 = objects[i].position.x;
-//            var y1 = objects[i].position.y;
-//            var z1 = objects[i].position.z;
-//            var xyz1 = [x1, y1, z1];
-
-//            var x2 = objects[i + 1].position.x;
-//            var y2 = objects[i + 1].position.y;
-//            var z2 = objects[i + 1].position.z;
-//            var xyz2 = [x2, y2, z2];
-
-//            var distance = GetDistance(xyz1, xyz2);
-
-//            labels_obj.push({
-//                point: {
-//                    xAxis: 0, yAxis: 0, x: ((GetPoint(objects[i + 1].position.x)) + (GetPoint(objects[i].position.x))) / 2,
-//                    y: ((GetPoint(objects[i + 1].position.y)) + (GetPoint(objects[i].position.y))) / 2
-//                }
-//                , text: 'Distance between Id: ' + objects[i].id + ' and ' + objects[i + 1].id + '= ' + distance + 'm'
-//            })
-
-//        }
-//        console.log("Data: ", data_objs);
-//        console.log("labels_obj: ", labels_obj);
-
-
-//        if (z == 0) {
-//            // const point = [];
-//            for (var i in data_objs) {
-//                const point = [data_objs[i].x, data_objs[i].y, data_objs[i].label];
-//                const series = chartzone1.series[0],
-//                    shift = series.data.length > 20;
-//                console.log('point:', point);
-//                chartzone1.series[0].addPoint(point, true, shift);
-//            }
-
-//            // chartzone1.addSeries(data);
-//        }
-//        else {
-//            const point = [];
-
-//            for (var i in data_objs) {
-//                const point = [data_objs[i].x, data_objs[i].y, data_objs[i].label];
-//                const series = chartzone1.series[0],
-//                    shift = series.data.length > 20;
-//                console.log('point:', point);
-//                chartzone2.series[0].addPoint(point, true, shift);
-//            }
-//        }
-
-
-//    }
-
-//});
-
-function requestLidarData() {
-    //setTimeout(requestLidarData, 1000);
-};
-
-
-//window.addEventListener('load', function () {
-//    chartzone1 = new Highcharts.Chart({
-//        chart: {
-//            renderTo: 'Zone0',
-//            defaultSeriesType: 'line',
-//            events: {
-
-//            }
-//        },
-//        title: {
-//            text: 'Zone 0'
-//        },
-//        xAxis: {
-//            title: {
-//                text: 'X'
-//            },
-//            tickInterval: 0.5,
-//            gridLineWidth: 1
-//        },
-//        yAxis: {
-//            title: {
-//                text: 'Y'
-//            },
-//            tickInterval: 0.5,
-//            gridLineWidth: 1
-//        },
-//        legend: {
-//            layout: 'vertical',
-//            align: 'right',
-//            verticalAlign: 'middle'
-//        },
-
-//        plotOptions: {
-//            line: {
-//                dataLabels: {
-//                    enabled: true,
-//                    formatter: function () {
-//                        return this.point.label;
-//                    }
-//                },
-//                enableMouseTracking: true
-//            },
-//        },
-
-//        series: [{
-//            name: 'Zone 0',
-//            data: []
-//        }],
-//        responsive: {
-//            rules: [{
-//                condition: {
-//                    maxWidth: 500
-//                },
-//                chartOptions: {
-//                    legend: {
-//                        layout: 'horizontal',
-//                        align: 'center',
-//                        verticalAlign: 'bottom'
-//                    }
-//                }
-//            }]
-//        }
-//    });
-
-//    chartzone2 = new Highcharts.Chart({
-//        chart: {
-//            renderTo: 'Zone1',
-//            defaultSeriesType: 'line',
-//            events: {
-
-//            }
-//        },
-//        title: {
-//            text: 'Zone 1'
-//        },
-//        xAxis: {
-//            title: {
-//                text: 'X'
-//            },
-//            tickInterval: 0.5,
-//            gridLineWidth: 1
-//        },
-//        yAxis: {
-//            title: {
-//                text: 'Y'
-//            },
-//            tickInterval: 0.5,
-//            gridLineWidth: 1
-//        },
-//        legend: {
-//            layout: 'vertical',
-//            align: 'right',
-//            verticalAlign: 'middle'
-//        },
-
-//        plotOptions: {
-//            line: {
-//                dataLabels: {
-//                    enabled: true,
-//                    formatter: function () {
-//                        return this.point.label;
-//                    }
-//                },
-//                enableMouseTracking: true
-//            },
-//        },
-//        series: [{
-//            name: 'Zone 1',
-//            data: []
-//        }],
-//        responsive: {
-//            rules: [{
-//                condition: {
-//                    maxWidth: 500
-//                },
-//                chartOptions: {
-//                    legend: {
-//                        layout: 'horizontal',
-//                        align: 'center',
-//                        verticalAlign: 'bottom'
-//                    }
-//                }
-//            }]
-//        }
-//    });
-//});
-//window.addEventListener('load', function () {
-//    chart = new Highcharts.Chart({
-//        chart: {
-//            renderTo: 'Zone0',
-//            defaultSeriesType: 'spline',
-//            events: {
-//                load: requestData
-//            }
-//        },
-//        title: {
-//            text: 'Live random data'
-//        },
-//        xAxis: {
-//            type: 'datetime',
-//            tickPixelInterval: 150,
-//            maxZoom: 20 * 1000
-//        },
-//        yAxis: {
-//            minPadding: 0.2,
-//            maxPadding: 0.2,
-//            title: {
-//                text: 'Value',
-//                margin: 80
-//            }
-//        },
-//        series: [{
-//            name: 'Random data',
-//            data: []
-//        }]
-//    });
-//});
-//document.addEventListener('DOMContentLoaded', function () {
-//    var myChart = Highcharts.chart('container', {
-//        chart: {
-//            type: 'bar'
-//        },
-//        title: {
-//            text: 'Fruit Consumption'
-//        },
-//        xAxis: {
-//            categories: ['Apples', 'Bananas', 'Oranges']
-//        },
-//        yAxis: {
-//            title: {
-//                text: 'Fruit eaten'
-//            }
-//        },
-//        series: [{
-//            name: 'Jane',
-//            data: [1, 0, 4]
-//        }, {
-//            name: 'John',
-//            data: [5, 7, 3]
-//        }]
-//    });
-//});

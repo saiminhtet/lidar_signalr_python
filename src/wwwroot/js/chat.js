@@ -54,7 +54,7 @@ connection.on("ReceiveMessage", (message) => {
         "other": { "label_on": params.show_labels }
     });
 
-   
+
     // var r, g, b;
     var zone_objects = [{
         id: 0,
@@ -122,7 +122,7 @@ connection.on("ReceiveMessage", (message) => {
             });
         }
 
-       zone_objects.push(object[i]);
+        zone_objects.push(object[i]);
         // CREATE DYNAMIC TABLE.
         //var newDiv = document.createElement("div");
         //newDiv.setAttribute("class", "row");
@@ -174,7 +174,7 @@ connection.on("ReceiveMessage", (message) => {
         tr.appendChild(speed_data);
 
         divContainer.appendChild(newDiv);
-        newDiv.appendChild(table);    
+        newDiv.appendChild(table);
     }
 
     if (params.data.length == 0) {
@@ -634,38 +634,24 @@ function my_three_d_test_Fun() {
     three_d.make_scatter(params);
 }
 
-//function WritetoJSNlog(zone_objects) {
-//    if (zone_objects.length > 0) {
-//        for (var i in zone_objects) {
-//            for (var j = 0; j < zonelist[i].object.length - 1; j++) {
-//                var average_speed = GetSpeed(zone_objects[i].object[j].velocity);
-//                var objectsdistance = GetDistance(zonelist[i].object[j].position, zonelist[i].object[j + 1].position);
-
-//                var unix_timestamp = zonelist[i].object[j].timestamp;
-//                var date = timeConverter(unix_timestamp);
-
-//                JL().info('Timestamp: ' + date.toLocaleString() + ' Tracking Id: ' + zonelist[i].object[j].id + ', Average Speed=' + average_speed + ' m/s, Distance between ' + zonelist[i].object[j].id + ' and '
-//                    + zonelist[i].object[j + 1].id + ' is ' + objectsdistance + 'm');
-//            }
-//        }
-//    }
-//}
 function WritetoJSNlog(zone_objects) {
     if (zone_objects.length > 0) {
         for (var i = 0; i < zone_objects.length - 1; i++) {
-           // for (var j = 0; j < zone_objects[i].length - 1; j++) {
-                var average_speed = GetSpeed(zone_objects[i].velocity);
-                var objectsdistance = GetDistance(zone_objects[i].position, zone_objects[i + 1].position);
+            // for (var j = 0; j < zone_objects[i].length - 1; j++) {
+            var average_speed = GetSpeed(zone_objects[i].velocity);
+            var objectsdistance = GetDistance(zone_objects[i].position, zone_objects[i + 1].position);
 
-                var unix_timestamp = zone_objects[i].timestamp;
-                var date = timeConverter(unix_timestamp);
+            var unix_timestamp = zone_objects[i].timestamp;
+            var date = timeConverter(unix_timestamp);
 
-                JL().info('Timestamp: ' + date.toLocaleString() + ',' + ' Tracking Id: ' + zone_objects[i].id + ', Average Speed=' + average_speed + ' m/s, Distance between ' + zone_objects[i].id + ' and '
-                    + zone_objects[i + 1].id + ' is ' + objectsdistance + 'm');
-           // }
+            //JL().info('Timestamp: ' + date.toLocaleString() + ',' + ' Tracking Id: ' + zone_objects[i].id + ', Average Speed=' + average_speed + ' m/s, Distance between ' + zone_objects[i].id + ' and '
+            //    + zone_objects[i + 1].id + ' is ' + objectsdistance + 'm');
+            JL().info('Timestamp:,' + date.toLocaleString() + ',TrackingId:,' + zone_objects[i].id + ',Average Speed:,' + average_speed + ',m/s, Distance between, Point-A(TrackingId),' + zone_objects[i].id + ',and,Point-B(TrackingId),'
+                + zzone_objects[i + 1].id + ' ,=, ' + objectsdistance + ',m,');
         }
     }
 }
+
 
 
 $("#calculate").click(function () {

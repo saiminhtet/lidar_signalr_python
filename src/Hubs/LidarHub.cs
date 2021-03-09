@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -9,8 +9,9 @@ using Newtonsoft.Json;
 
 namespace src
 {
-    public class ChatHub : Hub
+    public class LidarHub : Hub
     {
+
         public ChannelReader<int> Counter(
         int count,
         int delay,
@@ -25,6 +26,7 @@ namespace src
 
             return channel.Reader;
         }
+
         private async Task WriteItemsAsync(
     ChannelWriter<int> writer,
     int count,
@@ -49,36 +51,6 @@ namespace src
             }
 
             writer.Complete(localException);
-        }
-        public async Task<Task> UploadStream(ChannelReader<string> stream)
-        {
-            while (await stream.WaitToReadAsync())
-            {
-                while (stream.TryRead(out var item))
-                {
-                    // do something with the stream item
-                    Console.WriteLine(item);
-                }
-            }
-            return Clients.All.SendAsync("UploadStream", stream);
-        }
-
-        public async Task UploadStreamData(ChannelReader<string> stream)
-        {
-            while (await stream.WaitToReadAsync())
-            {
-                while (stream.TryRead(out var item))
-                {
-                    // do something with the stream item
-                    //Console.WriteLine(item);
-                    await SendMessage(item);
-                }
-            }
-        }
-        public async Task SendMessage(string message)
-        {
-            //Thread.Sleep(1000);
-            await Clients.All.SendAsync("ReceiveMessage", message);
         }
 
         public async Task RetrieveLidatafromServer(string message)
@@ -107,18 +79,6 @@ namespace src
         {
             //Thread.Sleep(1000);
             await Clients.All.SendAsync("ReceiveLidarData", lidardata);
-        }
-
-        //public async Task SendMessage(string user, string message)
-        //{
-        //    await Clients.All.SendAsync("ReceiveMessage", user, message);
-        //}
-        public async Task DisconnectMe()
-        {
-
-            // var client = Clients.Client(Context.ConnectionId).Dis;
-            Context.Abort();
-            //await Clients.All.SendAsync("ReceiveMessage", $"{Context.ConnectionId} Disconnected");
         }
     }
 }

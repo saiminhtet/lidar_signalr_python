@@ -113,6 +113,7 @@ namespace src
                     pattern: "{controller=Home}/{action=Index}/{id?}");
                 endpoints.MapHub<ChatHub>("/chatHub");
                 endpoints.MapHub<AuthChatHub>("/authHub");
+                endpoints.MapHub<LidarHub>("/lidarHub");
             });
         }
     }
